@@ -1,63 +1,97 @@
 <template>
   <div id="app">
-    <!-- <HelloWorld texts="Тестовая кнопка покупки" title="Корзина" /> -->
     <ul :class="'products'">
       <li
         @mouseenter="product.hover = true"
         @mouseleave="product.hover = false"
         :class="product.hover ? 'active' : ''"
-        v-for="product in products"
-        v-bind:key="product.id"
+        v-for="(product, index) in products"
+        v-bind:key="index"
       >
         <img v-if="product.img" :src="product.img" />
         <div class="card-content">
-        <a :href="product.link"><h2>{{ product.post_title }}</h2></a>
-        <p>{{ product.excerpt }}</p>
-        <p class="pack">{{ product.pack }}</p>
-        <p class="price">{{ product.price }}<span class="currency"> p.</span></p>
+          <a :href="product.link">
+            <h2>{{ product.title }}</h2>
+          </a>
+          <p>{{ product.excerpt }}</p>
+          <p class="pack">{{ product.pack }}</p>
+          <p class="price">
+            {{ product.price }}
+            <span class="currency">p.</span>
+          </p>
         </div>
-        <p><button :class="product.incart ? 'btn-incart' : 'btn-order'" @click="product.incart = !product.incart; saveCart(product.id, this.cart)">{{product.incart ? 'В Заказе' : 'Заказать'}}</button></p>
+        <p>
+          <button
+            :class="product.incart ? 'btn-incart' : 'btn-order'"
+            @click="addCartItem(product.id)"
+            :disabled="product.incart"
+          >{{product.incart ? 'Выбрано' : 'Выбрать'}}</button>
+        </p>
       </li>
     </ul>
+    <Cart :cart="cart" :Total="Total" v-on:dell-item="dellCartItem" v-on:add-item="addCartItem" />
     <ContactForm />
   </div>
 </template>
 
 <script>
-//import HelloWorld from "./components/HelloWorld";
 import ContactForm from "./components/ContactForm";
+import Cart from "@/components/Cart";
 
 export default {
   name: "App",
   components: {
-    //HelloWorld,
-    ContactForm
+    ContactForm,
+    Cart
   },
-  data() {
+  data: () => {
     return {
       products: [],
       cart: []
     };
   },
+  computed: {
+    Total() {
+      let total = 0;
+      this.cart.forEach(item => {
+        total += item.price * item.qty;
+      });
+      return total;
+    }
+  },
   methods: {
-    saveCart: (id, cart) => {
-      if (cart.indexOf(id) === -1) {cart.push(id)};
-      localStorage.cart = JSON.stringify(cart);
+    dellCartItem: function(cartindex, id) {
+      var prindex = this.products.findIndex(product => product.id === id);
+      if (this.products[prindex].qty > 1) {
+        this.products[prindex].qty--;
+      } else {
+        this.cart.splice(cartindex, 1);
+        this.products[prindex].qty = 0;
+        this.products[prindex].incart = false;
+      }
+      //localStorage.cart = JSON.stringify(this.cart);
+    },
+    addCartItem: function(id) {
+      let index = this.products.findIndex(product => product.id === id )
+      if (this.products[index].incart) {
+        this.products[index].qty++;
+      } else {
+        this.cart.push(this.products[index]);
+        this.products[index].incart = true;
+        this.products[index].qty = 1;
+      }
+      //localStorage.cart = JSON.stringify(this.cart);
     },
     fetchdata: function() {
-      //fetch(`https://jsonplaceholder.typicode.com/users`)
       fetch("https://thai-open.ru/json-api/")
         .then(response => response.json())
         .then(json => {
           this.products = json;
         });
-    }
+    },
   },
   mounted() {
     this.fetchdata();
-    if (localStorage.cart) {
-      this.cart = JSON.parse(localStorage.cart);
-    }
   }
 };
 </script>
@@ -95,7 +129,7 @@ export default {
   object-fit: cover;
 }
 .products .pack {
-  color:#009FE0;
+  color: #009fe0;
 }
 .products .card-content {
   padding: 0 10px 10px 10px;
@@ -116,11 +150,14 @@ export default {
   text-transform: uppercase;
   outline: none;
 }
+.products button:disabled {
+    background: #0077005e;
+}
 .products a {
   color: inherit;
   text-decoration: none;
 }
 .products a:hover {
-  color:#009FE0;
+  color: #009fe0;
 }
 </style>

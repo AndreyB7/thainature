@@ -5,7 +5,7 @@
         <p v-show="!email.valid">Проверьте введенные данные...</p>
       </div>
       <fieldset>
-        <legend>ОТПРАВКА ЗАКАЗА</legend>
+        <legend>ОТПРАВЬТЕ ЗАКАЗ</legend>
         <div>
           <label class="label" for="name">Ваше Имя</label>
           <input type="text" name="name" id="name" required v-model="name" />
@@ -33,7 +33,9 @@
           />
         </div>
         <div>
-          <label class="label" for="textarea">Укажите почтовый адрес доставки и необходимые пояснения к Вашему заказу:</label>
+          <label class="label" for="textarea"
+           >Укажите почтовый адрес доставки и необходимые пояснения к Вашему заказу:
+          </label>
           <textarea
             class="message"
             name="textarea"
@@ -42,10 +44,12 @@
             v-model="message.text"
             :maxlength="message.maxlength"
           ></textarea>
-          <span class="counter">{{ message.text.length }} / {{ message.maxlength }}</span>
+          <span class="counter">
+            {{ message.text.length }} / {{ message.maxlength }}
+          </span>
         </div>
         <div>
-          <input type="submit" :value='buttontext' :disabled='isDisabled' />
+          <input type="submit" :value="buttontext" :disabled="isDisabled" />
         </div>
       </fieldset>
     </form>
@@ -122,8 +126,8 @@ export default {
     },
     // check for valid email adress
     isEmail: function(value) {
-      this.isDisabled = false
-      return emailRegExp.test(value)
+      this.isDisabled = false;
+      return emailRegExp.test(value);
     },
     isPhone: function(value) {
       this.isDisabled = false;
@@ -414,7 +418,7 @@ header h1 {
 }
 .vue-form input[type="submit"]:disabled {
   background-color: #777;
-  cursor:unset;
+  cursor: unset;
 }
 
 .no-touch .vue-form input[type="submit"]:hover {
