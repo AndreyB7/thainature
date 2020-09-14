@@ -1,42 +1,65 @@
 <template>
+  <!-- eslint-disable -->
   <div id="app">
-    <ul :class="'products'">
+    <div v-if="products.length < 1">Загрузка...</div>
+    <ul class="products">
       <li
+        class="product"
         @mouseenter="product.hover = true"
         @mouseleave="product.hover = false"
         :class="product.hover ? 'active' : ''"
         v-for="(product, index) in products"
         v-bind:key="index"
       >
-        <img v-if="product.img" :src="product.img" />
-        <div class="card-content">
-          <a :href="product.link">
-            <h2>{{ product.title }}</h2>
+        <div class="card-wrap">
+          <a class="link-img" :href="product.link">
+            <img :src="product.img" />
           </a>
-          <p>{{ product.excerpt }}</p>
-          <p class="pack">{{ product.pack }}</p>
-          <p class="price">
-            {{ product.price }}
-            <span class="currency">p.</span>
-          </p>
-        </div>
-        <p>
+          <div class="card-content">
+            <a :href="product.link">
+              <h2 class="title">{{ product.title }}</h2>
+            </a>
+            <p class="desc">
+              {{ product.excerpt }}
+              <br />
+              <a class="more" :href="product.link">Подробнее</a>
+            </p>
+            <div class="pack">{{ product.pack }}</div>
+            <span class="price">
+              {{ product.price }}
+              <span class="currency">p.</span>
+            </span>
+          </div>
           <button
-            :class="product.incart ? 'btn-incart' : 'btn-order'"
             @click="addCartItem(product.id)"
             :disabled="product.incart"
           >{{product.incart ? 'Выбрано' : 'Выбрать'}}</button>
-        </p>
+        </div>
       </li>
     </ul>
-    <Cart :cart="cart" :Total="Total" v-on:dell-item="dellCartItem" v-on:add-item="addCartItem" />
-    <ContactForm />
+    <Cart
+      :cart="cart"
+      :animate="animate"
+      :Total="Total"
+      :popupopen="popupopen"
+      v-on:dell-item="dellCartItem"
+      v-on:add-item="addCartItem"
+      v-on:toggle-popup="togglePopup"
+    />
+    <ContactForm
+      :cart="cart"
+      :Total="Total"
+      :popupopen="popupopen"
+      v-on:toggle-popup="togglePopup"
+    />
+    <!-- <div class="debug"><pre>{{products[2]}}||{{cart[0]}}</pre></div> -->
   </div>
 </template>
 
 <script>
 import ContactForm from "./components/ContactForm";
 import Cart from "@/components/Cart";
+import axios from "axios";
 
 export default {
   name: "App",
@@ -47,14 +70,21 @@ export default {
   data: () => {
     return {
       products: [],
-      cart: []
+      cart: [],
+      animate: false,
+      popupopen: false,
+      isSuccess: false
     };
   },
   computed: {
     Total() {
-      let total = 0;
+      let total = {
+        count: 0,
+        summ: 0
+      };
       this.cart.forEach(item => {
-        total += item.price * item.qty;
+        total.count++;
+        total.summ += item.price * item.qty;
       });
       return total;
     }
@@ -62,35 +92,67 @@ export default {
   methods: {
     dellCartItem: function(cartindex, id) {
       var prindex = this.products.findIndex(product => product.id === id);
-      if (this.products[prindex].qty > 1) {
+      if (this.cart[cartindex].qty > 1) {
+        //if (this.products[prindex].qty > 1) {
         this.products[prindex].qty--;
       } else {
         this.cart.splice(cartindex, 1);
         this.products[prindex].qty = 0;
         this.products[prindex].incart = false;
       }
-      //localStorage.cart = JSON.stringify(this.cart);
+      localStorage.cart = JSON.stringify(this.cart);
     },
-    addCartItem: function(id) {
-      let index = this.products.findIndex(product => product.id === id )
+    addCartItem: function(id, qty) {
+      //animate cart btn
+      this.animate = true;
+      setTimeout(() => (this.animate = false), 200);
+      clearTimeout();
+      //end
+      let index = this.products.findIndex(product => product.id === id);
+      let cartindex = this.cart.findIndex(cartitem => cartitem.id === id);
       if (this.products[index].incart) {
-        this.products[index].qty++;
+        //this.products[index].qty++;
+        this.cart[cartindex].qty++;
       } else {
         this.cart.push(this.products[index]);
         this.products[index].incart = true;
         this.products[index].qty = 1;
       }
-      //localStorage.cart = JSON.stringify(this.cart);
+      if (qty > 1) {
+        this.products[index].qty = qty;
+      }
+      localStorage.cart = JSON.stringify(this.cart);
     },
     fetchdata: function() {
-      fetch("https://thai-open.ru/json-api/")
-        .then(response => response.json())
-        .then(json => {
-          this.products = json;
+      //fetch("https://thai-open.ru/json-api/")
+      //  .then(response => response.json())
+      //  .then(json => {
+      //    this.products = json;
+      //    this.updateCart();
+      //  });
+
+      axios
+        .get("https://thai-open.ru/json-api/")
+        .then(response => {
+          this.products = response.data;
+        })
+        .catch(err => {
+          console.log(err)
         });
     },
+    updateCart: function() {
+      if (localStorage.cart) {
+        let savedcart = JSON.parse(localStorage.cart);
+        savedcart.forEach(cartitem =>
+          this.addCartItem(cartitem.id, cartitem.qty)
+        );
+      }
+    },
+    togglePopup: function() {
+      this.popupopen = !this.popupopen;
+    }
   },
-  mounted() {
+  created() {
     this.fetchdata();
   }
 };
@@ -109,55 +171,111 @@ export default {
   justify-content: center;
   margin: 15px -15px;
   padding: 0;
+  min-height: 450px;
 }
-.products li {
+.product {
   margin: 15px;
   border-radius: 10px;
-  border: 1px solid #d4d4d4;
   overflow: hidden;
   width: 300px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  transition: all 0.2s;
 }
-.products li.active {
+.card-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+}
+.product.active {
   box-shadow: 0 0 10px #d4d4d4;
 }
-.products img {
+.product .title {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+.product .link-img {
   width: 300px;
   height: 192px;
-  object-fit: cover;
+  display: block;
+  overflow: hidden;
 }
-.products .pack {
+.product img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+.product .more {
+  color: #007700;
+}
+.product .desc {
+  flex: 1 1 0%;
+}
+.product .pack {
   color: #009fe0;
 }
-.products .card-content {
+.product .card-content {
   padding: 0 10px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  border: 1px solid #d4d4d4;
+  border-top: 0;
+  border-bottom: 0;
 }
-.products .card-content p {
-  margin-bottom: 0;
-}
-.products .price {
+.product .price {
   font-size: 20px;
   font-weight: bold;
 }
-.products .currency {
+.product .currency {
   position: absolute;
   font-weight: normal;
   margin-left: 0.25rem;
 }
-.products button {
+.product button {
+  border-radius: 0 0 10px 10px;
   text-transform: uppercase;
   outline: none;
 }
-.products button:disabled {
-    background: #0077005e;
+.product button:disabled {
+  background: #0077005e;
 }
-.products a {
+.product a {
   color: inherit;
   text-decoration: none;
 }
-.products a:hover {
+.product a:hover {
   color: #009fe0;
+}
+</style>
+<style>
+button:disabled {
+  background-color: #d4d4d4;
+  cursor: unset;
+  color: #777;
+  border-color: #777;
+}
+.debug {
+  border-radius: 4px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: scroll;
+  max-height: 100vh;
+  margin: 50px auto;
+  width: 500px;
+  background-color: #000;
+  padding: 50px;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.3);
+}
+
+.debug pre {
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 30px;
+  font-family: "Source Code Pro", monospace;
+  font-weight: 300;
+  white-space: pre-wrap;
 }
 </style>

@@ -1,10 +1,27 @@
 <template>
-  <div class="form-wrapper">
+  <!-- eslint-disable -->
+  <div class="form-wrapper" :class="popupopen ? 'open' : 'close' ">
     <form class="vue-form" @submit.prevent="submit">
-      <div class="error-message">
-        <p v-show="!email.valid">Проверьте введенные данные...</p>
-      </div>
       <fieldset>
+        <span class="close-form" @click="$emit('toggle-popup')">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            width="30"
+            height="30"
+            viewBox="0 0 512 512"
+          >
+            <rect width="663.6" height="26.5" x="31" y="12" rx="10" transform="rotate(45 31 12)" />
+            <rect
+              width="663.6"
+              height="26.5"
+              x="12"
+              y="481"
+              rx="10"
+              transform="rotate(-45 12 481)"
+            />
+          </svg>
+        </span>
         <legend>ОТПРАВЬТЕ ЗАКАЗ</legend>
         <div>
           <label class="label" for="name">Ваше Имя</label>
@@ -19,6 +36,7 @@
             required
             :class="{ email, error: !email.valid }"
             v-model="email.value"
+            placeholder="email@google.com"
           />
         </div>
         <div>
@@ -30,12 +48,14 @@
             required
             :class="{ phone, error: !phone.valid }"
             v-model="phone.value"
+            placeholder="+79771234567"
           />
         </div>
         <div>
-          <label class="label" for="textarea"
-           >Укажите почтовый адрес доставки и необходимые пояснения к Вашему заказу:
-          </label>
+          <label
+            class="label"
+            for="textarea"
+          >Укажите почтовый адрес доставки и необходимые пояснения к Вашему заказу:</label>
           <textarea
             class="message"
             name="textarea"
@@ -44,22 +64,34 @@
             v-model="message.text"
             :maxlength="message.maxlength"
           ></textarea>
-          <span class="counter">
-            {{ message.text.length }} / {{ message.maxlength }}
-          </span>
+          <span class="counter">{{ message.text.length }} / {{ message.maxlength }}</span>
+        </div>
+        <div class="form-message">
+          <transition name="slide">
+            <div class="error" v-show="!email.valid || !phone.valid">Проверьте введенные данные...</div>
+          </transition>
+          <transition name="slide">
+            <div v-show="submitted">
+              Ваш заказ отправлен.
+              <br />Мы свяжемся с Вами в ближайшее время.
+              <br />
+              <a href="#" @click="$emit('toggle-popup')">Закрыть</a>
+            </div>
+          </transition>
         </div>
         <div>
           <input type="submit" :value="buttontext" :disabled="isDisabled" />
         </div>
       </fieldset>
     </form>
-    <div class="debug">
+    <!-- <div class="debug">
       <pre><code>{{ $data }}</code></pre>
-    </div>
+    </div>-->
   </div>
 </template>
 
 <script>
+import axios from "axios";
 // Regular expression from W3C HTML5.2 input specification:
 // https://www.w3.org/TR/html/sec-forms.html#email-state-typeemail
 const emailRegExp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -67,15 +99,16 @@ const phoneRegExp = /^[0-9\-+]{9,15}$/;
 
 export default {
   name: "ContactForm",
+  props: ["cart", "Total", "popupopen"],
   data: function() {
     return {
-      name: "Иван Иванов",
+      name: "",
       email: {
-        value: "yourname@google.com",
+        value: "",
         valid: true
       },
       phone: {
-        value: "+79771234567",
+        value: "",
         valid: true
       },
       message: {
@@ -90,47 +123,77 @@ export default {
   methods: {
     // submit form handler
     submit: function() {
-      this.submitted = true;
       this.isDisabled = true;
+      this.submitted = true;
       this.buttontext = "Отправлено";
-      fetch(
-        "https://thai-open.ru/wp-admin/admin-ajax.php?action=send_mail_to",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body:
-            "name=" +
-            this.name +
-            "&email=" +
-            this.email.value +
-            "&phone=" +
-            this.phone.value +
-            "&message=" +
-            this.message.text +
-            ""
-        }
-      )
-        .then(response => response.json())
-        .then(json => {
-          console.log(json);
+      var cartoutput = () => {
+        var output = [];
+        this.cart.forEach(item => {
+          output.push("" + item.title + " - " + item.qty + "шт");
         });
+        return output;
+      };
+      var senddata =
+        "name=" +
+        this.name +
+        "&email=" +
+        this.email.value +
+        "&phone=" +
+        this.phone.value +
+        "&message=" +
+        this.message.text +
+        "&cart=" +
+        JSON.stringify(cartoutput()) +
+        "";
+      axios.post('https://thai-open.ru/wp-admin/admin-ajax.php?action=send_mail_to', senddata, {
+            headers: {
+              Accept: "application/json"
+            }
+          })
+          .then(
+            response => {
+              console.log(response.data);
+            },
+            response => {
+              console.log(response);
+            }
+          );
+      //fetch(
+      //  "https://thai-open.ru/wp-admin/admin-ajax.php?action=send_mail_to",
+      //  {
+      //    method: "POST",
+      //    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      //    body: senddata
+      //  }
+      //)
+      //  .then(response => response.json())
+      //  .then(json => {
+      //    console.log(json);
+      //  });
     },
     // validate by type and value
     validate: function(type, value) {
+      this.isDisabled = true;
       if (type === "email") {
         this.email.valid = this.isEmail(value) ? true : false;
       }
       if (type === "phone") {
         this.phone.valid = this.isPhone(value) ? true : false;
       }
+      if (
+        this.phone.valid &
+        this.email.valid &
+        (this.email.value.length > 3) &
+        (this.phone.value.length > 5)
+      ) {
+        this.isDisabled = false;
+      }
     },
     // check for valid email adress
     isEmail: function(value) {
-      this.isDisabled = false;
       return emailRegExp.test(value);
     },
     isPhone: function(value) {
-      this.isDisabled = false;
       return phoneRegExp.test(value);
     }
   },
@@ -138,8 +201,10 @@ export default {
     if (localStorage.formdata) {
       var StoredData = JSON.parse(localStorage.formdata);
       this.name = StoredData.name;
-      this.email = StoredData.email;
-      this.phone = StoredData.phone;
+      this.validate("email", StoredData.email.value);
+      this.validate("phone", StoredData.phone.value);
+      this.email.valid ? (this.email.value = StoredData.email.value) : "";
+      this.phone.valid ? (this.phone.value = StoredData.phone.value) : "";
     }
   },
   watch: {
@@ -166,13 +231,35 @@ export default {
 </script>
 
 <style scoped>
+.close-form {
+  cursor: pointer;
+}
+.close-form {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
 *,
 *::after,
 *::before {
   box-sizing: border-box;
 }
+.form-wrapper.open {
+  visibility: visible;
+  opacity: 1;
+  z-index: 4;
+}
 .form-wrapper {
-  display: flex;
+  transition: all 0.2s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  left: 0;
+  overflow: auto;
+  background: #00770040;
 }
 body {
   color: #fff;
@@ -227,10 +314,12 @@ header h1 {
   width: 500px;
   padding: 15px;
   border-radius: 10px;
-  margin: 50px auto;
+  margin: 10px auto;
   width: 500px;
+  max-width: 100vw;
   background-color: #fff;
   box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.3);
+  position: relative;
 }
 .vue-form fieldset {
   margin: 0;
@@ -420,7 +509,6 @@ header h1 {
   background-color: #777;
   cursor: unset;
 }
-
 .no-touch .vue-form input[type="submit"]:hover {
   background: #42a2e1;
 }
@@ -431,21 +519,13 @@ header h1 {
 .vue-form input[type="submit"]:active {
   transform: scale(0.9);
 }
-.vue-form .error-message {
-  display: none;
-  height: 35px;
-  margin: 0px;
+.vue-form .form-message > div {
+  border: 1px solid #007700;
+  margin: 25px 0 0px;
+  border-radius: 4px;
+  padding: 5px;
 }
-.vue-form .error-message p {
-  background: #e94b35;
-  color: #ffffff;
-  font-size: 1.4rem;
-  text-align: center;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  border-radius: 0.25em;
-  padding: 16px;
-}
+
 .vue-form .error {
   border-color: #e94b35 !important;
 }
@@ -457,26 +537,6 @@ header h1 {
   padding: 0px 3px;
   left: 0;
   border-radius: 3px;
-}
-
-.debug {
-  display: none;
-  border-radius: 4px;
-  margin: 50px auto;
-  width: 500px;
-  background-color: #000;
-  padding: 50px;
-  background: rgba(0, 0, 0, 0.8);
-  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.3);
-}
-
-.debug pre {
-  color: #ffffff;
-  font-size: 18px;
-  line-height: 30px;
-  font-family: "Source Code Pro", monospace;
-  font-weight: 300;
-  white-space: pre-wrap;
 }
 
 @-webkit-keyframes cd-bounce {

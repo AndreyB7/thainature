@@ -8,13 +8,18 @@
     <title>
         <%= htmlWebpackPlugin.options.title %>
     </title>
+    <link rel="stylesheet" id="hello-elementor-theme-style-css" href="https://thai-open.ru/wp-content/themes/hello-elementor/theme.min.css?ver=2.2.0" type="text/css" media="all">
+    <link rel="stylesheet" id="hello-elementor-css" href="https://thai-open.ru/wp-content/themes/hello-elementor/style.min.css?ver=2.2.0" type="text/css" media="all">
+    <link rel="stylesheet" id="thai_custom_css-css" href="https://thai-open.ru/wp-content/plugins/main-plugin//assets/css/custom.css?ver=5.5.1" type="text/css" media="all">
 </head>
 
 <body>
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
-    <div id="app"></div>
+    <div class="page-container">
+        <div id="app"></div>
+    </div>
     <!-- built files will be auto injected -->
 </body>
 
