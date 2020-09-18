@@ -4,7 +4,7 @@
     <form class="vue-form" @submit.prevent="revalidate">
       <fieldset>
         <span class="close-form" @click="$emit('toggle-popup')">
-        <svg width="20" height="20" fill="currentcolor"><use xlink:href="https://thai-open.ru/symbol-defs.svg#icon-close"></use></svg>
+        <svg width="20" height="20" fill="currentcolor"><use xlink:href="/symbol-defs.svg#icon-close"></use></svg>
         </span>
         <legend>ОТПРАВЬТЕ ЗАКАЗ</legend>
         <div>

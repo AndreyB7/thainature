@@ -4,7 +4,7 @@
     <div class="shopping-cart">
       <button :class="animate ? 'animate' : ''" class="cart-toggle" @click="cartopen = !cartopen">
         <svg width="24" height="24" fill="currentcolor">
-          <use xlink:href="https://thai-open.ru/symbol-defs.svg#icon-cart" />
+          <use xlink:href="/symbol-defs.svg#icon-cart" />
         </svg>
         {{cart.length}}
       </button>
