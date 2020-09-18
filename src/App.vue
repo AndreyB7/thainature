@@ -1,5 +1,5 @@
+<!-- eslint-disable -->
 <template>
-  <!-- eslint-disable -->
   <div id="app">
     <div v-if="products.length < 1">Загрузка...</div>
     <ul class="products">
@@ -33,7 +33,7 @@
           <button
             @click="addCartItem(product.id)"
             :disabled="product.incart"
-          >{{product.incart ? 'Выбрано' : 'Выбрать'}}</button>
+          >{{product.incart ? 'В Корзине' : 'Выбрать'}}</button>
         </div>
       </li>
     </ul>
@@ -81,7 +81,7 @@ export default {
       let total = {
         count: 0,
         summ: 0
-      };
+      };      
       this.cart.forEach(item => {
         total.count++;
         total.summ += item.price * item.qty;
@@ -90,14 +90,14 @@ export default {
     }
   },
   methods: {
-    dellCartItem: function(cartindex, id) {
-      var prindex = this.products.findIndex(product => product.id === id);
+    dellCartItem: function(id) {
+      let cartindex = this.cart.findIndex(cartitem => cartitem.id === id);
       if (this.cart[cartindex].qty > 1) {
-        //if (this.products[prindex].qty > 1) {
-        this.products[prindex].qty--;
+        this.cart[cartindex].qty--;
       } else {
+        this.cart[cartindex].qty = 0;
         this.cart.splice(cartindex, 1);
-        this.products[prindex].qty = 0;
+        let prindex = this.products.findIndex(product => product.id === id);
         this.products[prindex].incart = false;
       }
       localStorage.cart = JSON.stringify(this.cart);
@@ -111,7 +111,6 @@ export default {
       let index = this.products.findIndex(product => product.id === id);
       let cartindex = this.cart.findIndex(cartitem => cartitem.id === id);
       if (this.products[index].incart) {
-        //this.products[index].qty++;
         this.cart[cartindex].qty++;
       } else {
         this.cart.push(this.products[index]);
@@ -124,20 +123,15 @@ export default {
       localStorage.cart = JSON.stringify(this.cart);
     },
     fetchdata: function() {
-      //fetch("https://thai-open.ru/json-api/")
-      //  .then(response => response.json())
-      //  .then(json => {
-      //    this.products = json;
-      //    this.updateCart();
-      //  });
-
       axios
         .get("https://thai-open.ru/json-api/")
+        //.get("/products.json")
         .then(response => {
           this.products = response.data;
+          this.updateCart();
         })
         .catch(err => {
-          console.log(err)
+          console.log(err);
         });
     },
     updateCart: function() {
@@ -163,6 +157,7 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
+  overflow: hidden;
 }
 .products {
   list-style: none;
@@ -181,6 +176,7 @@ export default {
   display: flex;
   flex-direction: column;
   transition: all 0.2s;
+  text-align: center;
 }
 .card-wrap {
   display: flex;
@@ -188,7 +184,7 @@ export default {
   flex: 1 1 0%;
 }
 .product.active {
-  box-shadow: 0 0 10px #d4d4d4;
+  box-shadow: 0 0 10px #f1f1f1;
 }
 .product .title {
   font-size: 1.4rem;
@@ -201,9 +197,11 @@ export default {
   overflow: hidden;
 }
 .product img {
-  object-fit: cover;
+  object-fit: fill;
+  border-radius: 10px 10px 0 0;
   width: 100%;
   height: 100%;
+  border: 1px solid #f1f1f1;
 }
 .product .more {
   color: #007700;
@@ -219,7 +217,7 @@ export default {
   display: flex;
   flex-direction: column;
   flex: 1 1 0%;
-  border: 1px solid #d4d4d4;
+  border: 1px solid #f1f1f1;
   border-top: 0;
   border-bottom: 0;
 }
@@ -238,7 +236,7 @@ export default {
   outline: none;
 }
 .product button:disabled {
-  background: #0077005e;
+  background: #007700;
 }
 .product a {
   color: inherit;
@@ -250,10 +248,10 @@ export default {
 </style>
 <style>
 button:disabled {
-  background-color: #d4d4d4;
+  background-color: #f1f1f1;
   cursor: unset;
-  color: #777;
-  border-color: #777;
+  color: #fff;
+  border-color: #f1f1f1;
 }
 .debug {
   border-radius: 4px;
@@ -277,5 +275,31 @@ button:disabled {
   font-family: "Source Code Pro", monospace;
   font-weight: 300;
   white-space: pre-wrap;
+}
+.grecaptcha-badge {
+  z-index: 1000;
+}
+
+.g-recaptcha--left .grecaptcha-badge {
+  width: 70px !important;
+  overflow: hidden;
+  transition: all 0.2s ease !important;
+  left: 0px;
+}
+
+.g-recaptcha--left .grecaptcha-badge:hover {
+  width: 256px !important;
+}
+
+@media (max-width: 992px) {
+  .g-recaptcha--mobile-hidden .grecaptcha-badge {
+    display: none;
+  }
+}
+
+@media (min-width: 992px) {
+  .g-recaptcha--desktop-hidden .grecaptcha-badge {
+    display: none;
+  }
 }
 </style>

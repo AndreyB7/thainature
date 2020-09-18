@@ -1,26 +1,10 @@
 <template>
   <!-- eslint-disable -->
   <div class="form-wrapper" :class="popupopen ? 'open' : 'close' ">
-    <form class="vue-form" @submit.prevent="submit">
+    <form class="vue-form" @submit.prevent="revalidate">
       <fieldset>
         <span class="close-form" @click="$emit('toggle-popup')">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="currentColor"
-            width="30"
-            height="30"
-            viewBox="0 0 512 512"
-          >
-            <rect width="663.6" height="26.5" x="31" y="12" rx="10" transform="rotate(45 31 12)" />
-            <rect
-              width="663.6"
-              height="26.5"
-              x="12"
-              y="481"
-              rx="10"
-              transform="rotate(-45 12 481)"
-            />
-          </svg>
+        <svg width="20" height="20" fill="currentcolor"><use xlink:href="https://thai-open.ru/symbol-defs.svg#icon-close"></use></svg>
         </span>
         <legend>ОТПРАВЬТЕ ЗАКАЗ</legend>
         <div>
@@ -81,17 +65,25 @@
         </div>
         <div>
           <input type="submit" :value="buttontext" :disabled="isDisabled" />
+          <vue-programmatic-invisible-google-recaptcha
+            ref="invisibleRecaptcha1"
+            :sitekey="'6Leb2csZAAAAAJ2MpSIqhxeVhcnRj1pqW6XQycYG'"
+            :elementId="'invisibleRecaptcha1'"
+            :badgePosition="'left'"
+            :showBadgeMobile="false"
+            :showBadgeDesktop="true"
+            @recaptcha-callback="recaptchaCallback"
+          ></vue-programmatic-invisible-google-recaptcha>
         </div>
       </fieldset>
     </form>
-    <!-- <div class="debug">
-      <pre><code>{{ $data }}</code></pre>
-    </div>-->
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import VueProgrammaticInvisibleGoogleRecaptcha from "vue-programmatic-invisible-google-recaptcha";
+
 // Regular expression from W3C HTML5.2 input specification:
 // https://www.w3.org/TR/html/sec-forms.html#email-state-typeemail
 const emailRegExp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -100,6 +92,9 @@ const phoneRegExp = /^[0-9\-+]{9,15}$/;
 export default {
   name: "ContactForm",
   props: ["cart", "Total", "popupopen"],
+  components: {
+    VueProgrammaticInvisibleGoogleRecaptcha
+  },
   data: function() {
     return {
       name: "",
@@ -117,13 +112,32 @@ export default {
       },
       buttontext: "Отправить",
       submitted: false,
-      isDisabled: true
+      isDisabled: true,
+      recaptchaToken: 'nothing...',
+      recaptchaStatus: ''
     };
   },
   methods: {
     // submit form handler
-    submit: function() {
+    revalidate: function() {
+      this.$refs.invisibleRecaptcha1.execute();
       this.isDisabled = true;
+      this.buttontext = "Отправка..."
+    },
+    recaptchaCallback(recaptchaToken) {
+      var data = '&grecaptchaToken=' + recaptchaToken;
+      axios.post("https://thai-open.ru/registercaptcha.php", data ).then(result => {
+        this.recaptchaStatus = result.data.status;
+        if (result.data.status === 'ok') {
+          this.submit();
+        } else {
+          this.isDisabled = false;
+          this.buttontext = "Ошибка"
+        }
+      });
+      this.recaptchaToken = recaptchaToken
+    },
+    submit: function() {
       this.submitted = true;
       this.buttontext = "Отправлено";
       var cartoutput = () => {
@@ -138,41 +152,32 @@ export default {
         this.name +
         "&email=" +
         this.email.value +
-        "&phone=" +
+        "&phone=%2B" +
         this.phone.value +
         "&message=" +
         this.message.text +
         "&cart=" +
         JSON.stringify(cartoutput()) +
         "";
-      axios.post('https://thai-open.ru/wp-admin/admin-ajax.php?action=send_mail_to', senddata, {
+      axios
+        .post(
+          "https://thai-open.ru/wp-admin/admin-ajax.php?action=send_mail_to",
+          senddata,
+          {
             headers: {
               Accept: "application/json"
             }
-          })
-          .then(
-            response => {
-              console.log(response.data);
-            },
-            response => {
-              console.log(response);
-            }
-          );
-      //fetch(
-      //  "https://thai-open.ru/wp-admin/admin-ajax.php?action=send_mail_to",
-      //  {
-      //    method: "POST",
-      //    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      //    body: senddata
-      //  }
-      //)
-      //  .then(response => response.json())
-      //  .then(json => {
-      //    console.log(json);
-      //  });
+          }
+        )
+        .then(
+          response => {
+            console.log(response.data);
+          },
+        );
     },
     // validate by type and value
     validate: function(type, value) {
+      if (this.submitted) return
       this.isDisabled = true;
       if (type === "email") {
         this.email.valid = this.isEmail(value) ? true : false;
@@ -236,8 +241,8 @@ export default {
 }
 .close-form {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 10px;
+  right: 10px;
 }
 *,
 *::after,
@@ -260,6 +265,7 @@ export default {
   left: 0;
   overflow: auto;
   background: #00770040;
+  display: flex;
 }
 body {
   color: #fff;
@@ -314,7 +320,7 @@ header h1 {
   width: 500px;
   padding: 15px;
   border-radius: 10px;
-  margin: 10px auto;
+  margin: auto;
   width: 500px;
   max-width: 100vw;
   background-color: #fff;
