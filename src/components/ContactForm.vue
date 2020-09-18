@@ -22,6 +22,7 @@
             v-model="email.value"
             placeholder="email@google.com"
           />
+          <div class="field-error" v-show="!email.valid">Проверьте введенные данные...</div>
         </div>
         <div>
           <label class="label" for="phone">Телефон</label>
@@ -34,6 +35,7 @@
             v-model="phone.value"
             placeholder="+79771234567"
           />
+          <div class="field-error" v-show="!phone.valid">Проверьте введенные данные...</div>
         </div>
         <div>
           <label
@@ -51,17 +53,12 @@
           <span class="counter">{{ message.text.length }} / {{ message.maxlength }}</span>
         </div>
         <div class="form-message">
-          <transition name="slide">
-            <div class="error" v-show="!email.valid || !phone.valid">Проверьте введенные данные...</div>
-          </transition>
-          <transition name="slide">
             <div v-show="submitted">
               Ваш заказ отправлен.
               <br />Мы свяжемся с Вами в ближайшее время.
               <br />
               <a href="#" @click="$emit('toggle-popup')">Закрыть</a>
             </div>
-          </transition>
         </div>
         <div>
           <input type="submit" :value="buttontext" :disabled="isDisabled" />
@@ -236,6 +233,14 @@ export default {
 </script>
 
 <style scoped>
+.vue-form div.field-error {
+    color:#ff7777;
+    margin: 0px;
+    position: absolute;
+    font-size: 12px;
+    line-height: 12px;
+    bottom: -15px;
+}
 .close-form {
   cursor: pointer;
 }
