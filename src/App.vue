@@ -13,7 +13,7 @@
       >
         <div class="card-wrap">
           <a class="link-img" :href="product.link">
-            <img :src="product.img" />
+            <img :src="product.img" :alt="product.title" />
           </a>
           <div class="card-content">
             <a :href="product.link">
@@ -21,8 +21,6 @@
             </a>
             <p class="desc">
               {{ product.excerpt }}
-              <br />
-              <a class="more" :href="product.link">Подробнее</a>
             </p>
             <div class="pack">{{ product.pack }}</div>
             <span class="price">
@@ -51,6 +49,7 @@
       :Total="Total"
       :popupopen="popupopen"
       v-on:toggle-popup="togglePopup"
+      v-on:clear-cart="clearCart"
     />
     <!-- <div class="debug"><pre>{{products[2]}}||{{cart[0]}}</pre></div> -->
   </div>
@@ -90,6 +89,14 @@ export default {
     }
   },
   methods: {
+    clearCart: function() {
+      this.cart = [];
+      localStorage.removeItem('cart');
+      this.products.forEach(product => {
+        product.incart = false;
+        product.qty = 0;
+      })
+    },
     dellCartItem: function(id) {
       let cartindex = this.cart.findIndex(cartitem => cartitem.id === id);
       if (this.cart[cartindex].qty > 1) {

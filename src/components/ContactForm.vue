@@ -25,7 +25,7 @@
           <div class="field-error" v-show="!email.valid">Проверьте введенные данные...</div>
         </div>
         <div>
-          <label class="label" for="phone">Телефон</label>
+          <label class="label" for="phone">Телефон c международным кодом</label>
           <input
             type="text"
             name="phone"
@@ -57,7 +57,7 @@
               Ваш заказ отправлен.
               <br />Мы свяжемся с Вами в ближайшее время.
               <br />
-              <a href="#" @click="$emit('toggle-popup')">Закрыть</a>
+              <a href="#" @click="closeAndClear">Закрыть</a>
             </div>
         </div>
         <div>
@@ -149,8 +149,8 @@ export default {
         this.name +
         "&email=" +
         this.email.value +
-        "&phone=%2B" +
-        this.phone.value +
+        "&phone=" +
+        this.phone.value.replace(/[^0-9]/g,'') +
         "&message=" +
         this.message.text +
         "&cart=" +
@@ -197,6 +197,13 @@ export default {
     },
     isPhone: function(value) {
       return phoneRegExp.test(value);
+    },
+    closeAndClear: function() {
+      this.$emit('toggle-popup')
+      this.$emit('clear-cart')
+      this.submitted = false;
+      this.isDisabled = false;
+      this.buttontext = "Отправить";
     }
   },
   mounted() {
@@ -269,7 +276,7 @@ export default {
   height: 100vh;
   left: 0;
   overflow: auto;
-  background: #00770040;
+  background: rgba(0,0,0,.5);
   display: flex;
 }
 body {
